@@ -24,13 +24,13 @@
 #-------------------------------------------------------------------------------
 #
 # This is a work in progress importer for NeL 3D files (*.shape,
-# *.skel, ...).  The goal is to batch-import unpacked files from Ryzom into
-# a usable blender format.
+# *.skel, ...).  The goal is to batch-import unpacked files from NeL
+# 3D (Ryzom) into a usable blender format.
 #
 # The code here is based directly on the NeL source-code as contained
-# in the Ryzom hg repository. Most of the relevant files are in
-# 'code/nel/src/3d' where the serial(...) method of each class defines
-# the binary data format that is loaded here.
+# in the dev.ryzom.com hg repository. Most of the relevant files are
+# in 'code/nel/src/3d' where the serial(...) method of each class
+# defines the binary data format that is loaded here.
 # 
 #-------------------------------------------------------------------------------
 #  TODO: 
@@ -59,8 +59,19 @@ from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
 #gFileRootPath = "d:/programming/data/ryzom/unpacked_data/"
-gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+#gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+#gFileRootPath = "e:/ryzom/unpacked_data/"
+gFileRootPath = "e:/ryzom/data/flat/"
 
+#gShapeFileName = "fauna_shapes/FY_MO_Frahar_Boss.shape"
+#gShapeFileName = "fauna_shapes/TR_MO_H05_Boss.shape"
+
+#gShapeFileName = "objects/Ge_Mission_Hut.shape" # (n) CMeshMRMGeom_to_BlenderMesh
+gShapeFileName = "Ge_Mission_Outpost_townhall.shape"
+#gShapeFileName = "Ge_Mission_Stand.shape"
+#gShapeFileName = "GE_Mission_Prison.shape"
+
+#gShapeFileName = "indoors_shapes/TR_Hall_reunion.shape" # textures?
 
 #gIGFileName = "../flat_unpacked_data/canope_newbieland.ig"
 #gIGFileName = "../flat_unpacked_data/FY_hall_reunion.ig"
@@ -68,7 +79,7 @@ gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
 #gIGFileName = "MA_Hall_conseil.ig"
 
 #gShapeFileName = "FY_encensoir.shape";
-gShapeFileName = "city_part63.shape"
+#gShapeFileName = "city_part63.shape"
 
 #gShapeFileName = "indoors_shapes/tr_appart.shape"
 
@@ -1507,7 +1518,7 @@ def parse_CAnimation(f):
     
 
 
-gImageSearchPaths = ['.', '../testdata', 'construction', 'newbieland_maps', 'lacustre_maps', 'fauna_maps', 'desert_maps', 'jungle_maps', 'snowballs/maps', 'outgame', 'objects']
+gImageSearchPaths = ['.', '../ryzom_assets_rev2/orig_textures_flat', '../testdata', 'construction', 'newbieland_maps', 'lacustre_maps', 'fauna_maps', 'desert_maps', 'jungle_maps', 'snowballs/maps', 'outgame', 'objects']
     
 def findImage(filename):
     filename = filename.lower();
@@ -1515,9 +1526,9 @@ def findImage(filename):
         path = gFileRootPath + path + '/';
         fname = filename;
         if not os.path.exists(path+fname):
-            fname = filename.replace('.tga', '.dds');
+            fname = filename.replace('.tga', '.dds').replace('.TGA', '.dds');
         if not os.path.exists(path+fname):
-            fname = filename.replace('.TGA', '.dds');
+            fname = filename.replace('.tga', '.png').replace('.TGA', '.png');
         if not os.path.exists(path+fname):
             continue;
 
@@ -1527,7 +1538,7 @@ def findImage(filename):
             print("ERROR loading image from " + path+fname);
             return None;
 
-    print("WARNING: could not load image texture " + filename);
+    print("WARNING: could not find image texture " + filename);
     return None;
 
 

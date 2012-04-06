@@ -9,8 +9,10 @@ OVERVIEW:
 =======================
 
 This is a very early version of an import script to import Nel 3d
-(Ryzom) data files into Blender (http://www.blender.org/).  The goal
+(dev.ryzom.com) data files into Blender (www.blender.org).  The goal
 is to be able to batch-import .shape, .skel, and .anim files.
+
+The script is tested with Blender 2.62.
 
 
 LICENSE: 
