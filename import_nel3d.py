@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# NeL Blender Importer - Version 0.3.3 -
+# NeL 3D Blender Importer - Version 0.3.3 -
 # Copyright (C) 2012 Holger Dammertz
 #
 #-------------------------------------------------------------------------------
@@ -34,7 +34,7 @@
 # 
 #-------------------------------------------------------------------------------
 #  TODO: 
-#   -
+#   - alot
 #-------------------------------------------------------------------------------
 #  Notes: 
 #   - gStreamIDMap this variable holds the cached nodes during
@@ -69,7 +69,6 @@ gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
 
 #gShapeFileName = "FY_encensoir.shape";
 gShapeFileName = "city_part63.shape"
-
 
 #gShapeFileName = "indoors_shapes/tr_appart.shape"
 

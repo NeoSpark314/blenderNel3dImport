@@ -1,0 +1,31 @@
+NeL 3D Blender Importer (import_nel3d.py)
+
+CONTACT/AUTHORS:
+=======================
+Holger Dammertz (NeoSpark314@googlemail.com)
+
+
+OVERVIEW: 
+=======================
+
+This is a very early version of an import script to import Nel 3d
+(Ryzom) data files into Blender (http://www.blender.org/).  The goal
+is to be able to batch-import .shape, .skel, and .anim files.
+
+
+LICENSE: 
+=======================
+
+NeL 3D Blender Importer is licensed under the GNU GPL v.3. See the
+file COPYING for details.
+
+
+USAGE:
+=======================
+
+In its current state it is not an import plugin and can only be used
+directly from the Blender script/text editor. You need to adjust the
+global file name variables at the beginning of the file and
+comment/uncomment the desired functionality at the end of the file.
+Error and warning messages are ouput to the Blender console window.
+See the source file (import_nel3d.py) for further details.
