@@ -50,6 +50,17 @@
 #          object
 #-------------------------------------------------------------------------------
 
+bl_info= {
+    "name": "Import NeL 3D Objects",
+    "author": "NeoSpark314",
+    "version": (0, 3),
+    "blender": (2, 6, 2),
+    "location": "File > Import > NeL 3D (.shape)",
+    "description": "Import NeL 3D assets",
+    "warning": "",
+    "category": "Import-Export"}
+
+
 import bpy
 import os
 import struct
@@ -2285,17 +2296,56 @@ def convert_NelInstanceGroup_to_Blender(nelIG, rootPath):
 
     print(globalCenter);
 
-            
 
-    
+from bpy.props import StringProperty, BoolProperty
+
+class IMPORT_OT_NeL(bpy.types.Operator):
+    '''Import NeL 3D Operator.'''
+    bl_idname= "import_scene.nel3d_shape"
+    bl_label= "Import NeL 3D"
+    bl_description= "Import a NeL 3D shape file"
+    bl_options= {'REGISTER', 'UNDO'}
+
+    filepath= StringProperty(name="File Path", description="Filepath used for importing the NeL 3D file", maxlen=1024, default="")
+
+    def execute(self, context):
+        gFileRootPath = os.path.dirname(self.filepath);
+        nelMesh = load_NEL_file(self.filepath);
+        bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        wm.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def menu_func(self, context):
+    self.layout.operator(IMPORT_OT_NeL.bl_idname, text="NeL 3D (.shape)")
+
+
+def register():
+    bpy.utils.register_module(__name__)
+    bpy.types.INFO_MT_file_import.append(menu_func)
+
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+    bpy.types.INFO_MT_file_import.remove(menu_func)
+
+if __name__ == "__main__":
+    register()
+           
+
+   
 
 #nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
 #bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
 
 #debug_ApplyDefaultPosRot_AsPose(nelSkeleton, bSkeletonObj);
 
-nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
-bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
+#nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
+#bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
 #connectBlenderSkeleton_To_BlenderMeshObject(bSkeletonObj, bMeshObj);
 
 #animation = load_NEL_file(gFileRootPath + gAnimFileName);
