@@ -60,6 +60,8 @@ bl_info= {
     "warning": "",
     "category": "Import-Export"}
 
+gFileRootPath = "./"
+
 
 import bpy
 import os
@@ -69,89 +71,12 @@ import operator
 from bpy_extras.io_utils import unpack_list, unpack_face_list
 from bpy_extras.image_utils import load_image
 
-#gFileRootPath = "d:/programming/data/ryzom/unpacked_data/"
-#gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
-#gFileRootPath = "e:/ryzom/unpacked_data/"
-gFileRootPath = "e:/ryzom/data/flat/"
-
-#gShapeFileName = "fauna_shapes/FY_MO_Frahar_Boss.shape"
-#gShapeFileName = "fauna_shapes/TR_MO_H05_Boss.shape"
-
-#gShapeFileName = "objects/Ge_Mission_Hut.shape" # (n) CMeshMRMGeom_to_BlenderMesh
-gShapeFileName = "Ge_Mission_Outpost_townhall.shape"
-#gShapeFileName = "Ge_Mission_Stand.shape"
-#gShapeFileName = "GE_Mission_Prison.shape"
-
-#gShapeFileName = "indoors_shapes/TR_Hall_reunion.shape" # textures?
-
-#gIGFileName = "../flat_unpacked_data/canope_newbieland.ig"
-#gIGFileName = "../flat_unpacked_data/FY_hall_reunion.ig"
-#gIGFileName = "MA_appart_joueur.ig";
-#gIGFileName = "MA_Hall_conseil.ig"
-
-#gShapeFileName = "FY_encensoir.shape";
-#gShapeFileName = "city_part63.shape"
-
-#gShapeFileName = "indoors_shapes/tr_appart.shape"
-
-#gShapeFileName = "objects/GE_Mission_charette_ok.shape"
-#gShapeFileName = "objects/Ge_Mission_Charette.shape"
-#gShapeFileName = "objects/GE_Mission_clock_big.shape"
-
-#gShapeFileName = "objects/GE_Mission_Altar_Karavan.shape" # (n) CMeshMRMGeom
-#gShapeFileName = "objects/CA_HOF_Acc_Gauntlet.shape" # (y); skinned
-#gShapeFileName = "objects/Ge_Mission_Outpost_Drill_karavan.shape" # (y) 
-#gShapeFileName = "objects/ge_mission_temple_of_maduk.shape" # # (y)
-#gShapeFileName = "jungle_shapes/FO_S1_giant_tree.shape" #
-
-
-#gShapeFileName = "snowballs/shapes/gnu.shape"
-#gSkeletonFileName = "snowballs/anims/gnu.skel"
-#gAnimFileName = "snowballs/anims/marche.anim"
-
-#gShapeFileName = "../testdata/TR_MO_Arma.shape"
-#gSkeletonFileName = "../testdata/TR_MO_Arma.skel"
-#gAnimFileName = "../testdata/tr_mo_arma_grattefesse.anim"
-
-
-#gShapeFileName = "../testdata/FO_carnitree.shape"
-#gSkeletonFileName = "../testdata/fo_carnitree.skel"
-#gAnimFileName = "../testdata/fo_s3_carnitree_dead.anim"
-#gAnimFileName = "../testdata/fo_s3_carnitree_atk1.anim"
-
-#gShapeFileName = "../testdata/TR_MO_Clapclap.shape" 
-#gSkeletonFileName = "../testdata/tr_mo_clapclap.skel" 
-#gAnimFileName = "../testdata/tr_mo_clapclap_idle.anim"
-#gAnimFileName = "../testdata/tr_mo_clapclap_attaque_1.anim"
-#gAnimFileName = "../testdata/clapclap_debug_StaticPonyTail.anim"
-#gAnimFileName = "../testdata/clapclap_debug_RClavicle.anim"
-#gAnimFileName = "../testdata/clapclap_debug_schwanzKnick.anim"
-
-#gShapeFileName = "../testdata/TR_MO_Cute.shape" 
-#gSkeletonFileName = "../testdata/tr_mo_cute.skel" 
-#gAnimFileName = "../testdata/tr_mo_cute_atk_01.anim"
-#gAnimFileName = "../testdata/tr_mo_cute_walk.anim"
-
-
-#gShapeFileName = "../testdata/pingoo.shape" 
-#gSkeletonFileName = "../testdata/pingoo.skel" 
-#gAnimFileName = "../testdata/anim/pingoo_idle.anim"
-
-#gSkeletonFileName = "../testdata/fy_hof_skel.skel" 
-#gAnimFileName = "../testdata/fy_hof_a_marche.anim"
-
-#gAnimFileName = "snowballs/anims/idle.anim"
-
-#gSkeletonFileName = "characters_skeletons/fy_hof_skel.skel"
-
-#gSkeletonFileName = "fauna_skeletons/pr_mo_phytopsy.skel"
-#gAnimFileName = "fauna_animations/pr_mo_phytopsy_idle.anim"
 
 
 def error(message):
     raise Exception(message);
 
-    
+   
 
 def r_uint64(f):
     return struct.unpack('<Q', f.read(8))[0];
@@ -1531,10 +1456,10 @@ def parse_CAnimation(f):
 
 gImageSearchPaths = ['.', '../ryzom_assets_rev2/orig_textures_flat', '../testdata', 'construction', 'newbieland_maps', 'lacustre_maps', 'fauna_maps', 'desert_maps', 'jungle_maps', 'snowballs/maps', 'outgame', 'objects']
     
-def findImage(filename):
+def findImage(filename, importRootPath):
     filename = filename.lower();
     for path in gImageSearchPaths:
-        path = gFileRootPath + path + '/';
+        path = importRootPath + '/' + path + '/';
         fname = filename;
         if not os.path.exists(path+fname):
             fname = filename.replace('.tga', '.dds').replace('.TGA', '.dds');
@@ -1553,8 +1478,8 @@ def findImage(filename):
     return None;
 
 
-def helper_createAndAddTexture_returnImage(bmat, texFileName, suffixName):
-    img = findImage(texFileName);
+def helper_createAndAddTexture_returnImage(bmat, texFileName, suffixName, importRootPath):
+    img = findImage(texFileName, importRootPath);
     if img == None: return None;
     btex = bpy.data.textures.new(texFileName+"_mat_"+suffixName, type='IMAGE')
     btex.image = img;
@@ -1811,7 +1736,7 @@ def convert_CMeshMRMSkinnedGeom_to_BlenderMesh(bobj, bmesh, mrmGeom):
 
 
 
-def convert_NelMesh_to_BlenderObject(meshdata):
+def convert_NelMesh_to_BlenderObject(meshdata, importRootPath):
     name = meshdata['NelName'];
     bmesh = bpy.data.meshes.new(name);
 
@@ -1830,10 +1755,10 @@ def convert_NelMesh_to_BlenderObject(meshdata):
         for tex in mat['_Textures']:
             if tex != None and '_FileName' in tex:
                 texFileName = tex['_FileName'];
-                helper_createAndAddTexture_returnImage(bmat, texFileName, str(i));
+                helper_createAndAddTexture_returnImage(bmat, texFileName, str(i), importRootPath);
             elif tex != None and '_FileNames' in tex:
                 for texNum, texFileName in enumerate(tex['_FileNames']):
-                    helper_createAndAddTexture_returnImage(bmat, texFileName, str(i)+"_"+str(texNum));
+                    helper_createAndAddTexture_returnImage(bmat, texFileName, str(i)+"_"+str(texNum), importRootPath);
             elif tex != None:
                 print("WARNING !!TODO: Texture without '_Filename': NelType = " + tex['NelType']);
                 #print(tex);
@@ -2268,7 +2193,7 @@ def convert_NelInstanceGroup_to_Blender(nelIG, rootPath):
             nelMesh = load_NEL_file(fname);
             # !!TODO: find an easy way of instancing meshes (probably need to split the convert_NelMesh_to_BlenderObject method
             try:
-                bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
+                bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh, rootPath);
             except:
                 print("Excpetion thrown while loading file: ");
                 continue;
@@ -2309,9 +2234,11 @@ class IMPORT_OT_NeL(bpy.types.Operator):
     filepath= StringProperty(name="File Path", description="Filepath used for importing the NeL 3D file", maxlen=1024, default="")
 
     def execute(self, context):
-        gFileRootPath = os.path.dirname(self.filepath);
+        fileRootPath = os.path.dirname(self.filepath);
+        print(gFileRootPath);
+        print();
         nelMesh = load_NEL_file(self.filepath);
-        bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
+        bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh, fileRootPath);
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -2333,28 +2260,9 @@ def unregister():
     bpy.utils.unregister_module(__name__)
     bpy.types.INFO_MT_file_import.remove(menu_func)
 
+
+# comment these two lines when using the script from the script editor
 if __name__ == "__main__":
     register()
            
-
-   
-
-#nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
-#bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
-
-#debug_ApplyDefaultPosRot_AsPose(nelSkeleton, bSkeletonObj);
-
-#nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
-#bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh);
-#connectBlenderSkeleton_To_BlenderMeshObject(bSkeletonObj, bMeshObj);
-
-#animation = load_NEL_file(gFileRootPath + gAnimFileName);
-#convert_NelAnimation_to_BlenderAction(animation, nelSkeleton, bSkeletonObj);
-
-#print(getBindTrafo_Recursive("Bip01 Tail", nelSkeleton));
-#print(rotation_quaterniongetBindTrafo_Recursive("Bip01 Tail", nelSkeleton).inverted());
-
-#nelIG = load_NEL_file(gFileRootPath + gIGFileName);
-#convert_NelInstanceGroup_to_Blender(nelIG, gFileRootPath);
-
 
