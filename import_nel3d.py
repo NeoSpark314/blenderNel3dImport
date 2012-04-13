@@ -1698,7 +1698,6 @@ def convert_CMeshMRMSkinnedGeom_to_BlenderMesh(bobj, bmesh, mrmGeom):
     bmesh.faces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
     bmesh.faces.foreach_set("material_index", temp_AllFace_MatIds);
 
-
     bUVLayer = bmesh.uv_textures.new("uv0");
     for i, faceIdxs in enumerate(temp_AllFace_Idxs):
         b_texFace = bUVLayer.data[i];
@@ -1767,14 +1766,21 @@ def convert_NelMesh_to_BlenderObject(meshdata, importRootPath):
                 print("WARNING !!TODO: Texture without '_Filename': NelType = " + tex['NelType']);
                 #print(tex);
                 
-        # Settings for nicer preview; !!TODO: this should depend on the texture??
-        bmat.game_settings.alpha_blend = "ALPHA";
-        bmat.game_settings.use_backface_culling = False;
 
-        # Settings to render alphaclipping
-        bmat.alpha = 0.0;
-        bmat.use_transparency = True;
-        bmat.use_transparent_shadows = True;
+        #print(mat['_SrcBlend']);
+        #print(mat['_DstBlend']);
+        #print(mat['_AlphaTestThreshold']);
+        #print("");
+
+        if (mat['_SrcBlend'] == 'one'):        
+            # Settings for nicer preview; !!TODO: this should depend on the texture??
+            bmat.game_settings.alpha_blend = "ALPHA";
+            bmat.game_settings.use_backface_culling = False;
+
+            # Settings to render alphaclipping
+            bmat.alpha = 0.0;
+            bmat.use_transparency = True;
+            bmat.use_transparent_shadows = True;
 
         bmesh.materials.append(bmat);
 
@@ -2358,14 +2364,13 @@ def unregister():
 #if __name__ == "__main__":
 #    register()
 
-
-
-print("uh");
 #===============================================================================
 
 #gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
 #gSkeletonFileName = "tr_mo_clapclap.skel"
 #gShapeFileName = "FO_S2_big_tree.shape"
+#gShapeFileName = "ge_mission_capsule.shape"
+#gShapeFileName = "GE_Mission_oeuf_kitin.shape";
 
 #nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
 #bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
