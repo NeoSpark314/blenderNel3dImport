@@ -9,10 +9,10 @@ from import_nel3d import *
 
 
 #gFileRootPath = "d:/programming/data/ryzom/unpacked_data/"
-#gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
-gFileRootPath = "e:/ryzom/data/flat/"
+gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+#gFileRootPath = "e:/ryzom/data/flat/"
 
-gShapeFileName = "Ge_Mission_Outpost_townhall.shape"
+#gShapeFileName = "Ge_Mission_Outpost_townhall.shape"
 
 #gShapeFileName = "Ge_Mission_Hut.shape" # (n) CMeshMRMGeom_to_BlenderMesh
 #gShapeFileName = "GE_Mission_Altar_Karavan.shape" # (n) CMeshMRMGeom
@@ -28,17 +28,20 @@ gShapeFileName = "Ge_Mission_Outpost_townhall.shape"
 #gShapeFileName = "jungle_shapes/FO_S1_giant_tree.shape" #
 
 
+gSkeletonFileName = "tr_mo_clapclap.skel"
+
+
 #===============================================================================
 # calling the importer functions...
 #===============================================================================
 
-#nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
-#bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
+nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
+bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
 
 #debug_ApplyDefaultPosRot_AsPose(nelSkeleton, bSkeletonObj);
 
-nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
-bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh, gFileRootPath);
+#nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
+#bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh, gFileRootPath);
 #connectBlenderSkeleton_To_BlenderMeshObject(bSkeletonObj, bMeshObj);
 
 #animation = load_NEL_file(gFileRootPath + gAnimFileName);

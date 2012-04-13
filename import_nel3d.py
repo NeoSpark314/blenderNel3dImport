@@ -1484,11 +1484,15 @@ def helper_createAndAddTexture_returnImage(bmat, texFileName, suffixName, import
     btex = bpy.data.textures.new(texFileName+"_mat_"+suffixName, type='IMAGE')
     btex.image = img;
 
+    img.use_premultiply = True;
+
     print("Loaded texture: " + texFileName);
 
     mtex = bmat.texture_slots.add();
     mtex.texture = btex;
     mtex.texture_coords = 'UV'
+    mtex.alpha_factor = 1.0;
+    mtex.use_map_alpha = True;
 
     return img;
     
@@ -1762,9 +1766,15 @@ def convert_NelMesh_to_BlenderObject(meshdata, importRootPath):
             elif tex != None:
                 print("WARNING !!TODO: Texture without '_Filename': NelType = " + tex['NelType']);
                 #print(tex);
+                
+        # Settings for nicer preview; !!TODO: this should depend on the texture??
+        bmat.game_settings.alpha_blend = "ALPHA";
+        bmat.game_settings.use_backface_culling = False;
 
-        #print(mat.keys());
-        #print(mat['_Textures']);
+        # Settings to render alphaclipping
+        bmat.alpha = 0.0;
+        bmat.use_transparency = True;
+        bmat.use_transparent_shadows = True;
 
         bmesh.materials.append(bmat);
 
@@ -1786,7 +1796,6 @@ def convert_NelMesh_to_BlenderObject(meshdata, importRootPath):
         convert_CMeshMRMGeom_to_BlenderMesh(bobj, bmesh, meshdata['_MeshMRMGeom']);
     else:
         error("No Geometry found in loaded shape file " + name + " Type is " + meshdata['NelType']);
-
     
 
     # add the blender object to the current blender scene
@@ -1827,16 +1836,22 @@ def convert_NelSkeleton_to_BlenderArmature(skeleton):
         #!!TODO: need to understand how to handle inv bind position and the Default* stored in the skeleton
         # animation data seems to be absolute to the Default* matrix
 
-        #worldTM = nbone['InvBindPos']['M'].inverted();
-        worldTM = helper_Nel_get_LocalSkeletonMatrix_Recursive(nbone, skeleton);
+        worldTM = nbone['InvBindPos']['M'].inverted();
+        #worldTM = helper_Nel_get_LocalSkeletonMatrix_Recursive(nbone, skeleton);
+        #worldTM = mathutils.Matrix.Identity(4);
 
+        print (bbone.head);
+        print (bbone.tail);
 
-        bbone.tail = (worldTM * bbone.head.to_4d()).to_3d();
-        bbone.head = bbone.tail;
+        v0 = mathutils.Vector((0,0,0,1));
+        v1 = mathutils.Vector((0,0,0.25,1));
+
+        bbone.head = (worldTM * v0).to_3d();
+        bbone.tail = (worldTM * v1).to_3d(); # ??
 
     for bbone in bbonelist:
         if (bbone.parent != None):
-            bbone.parent.tail = bbone.head;
+            bbone.parent.tail = bbone.head; # ??
             #bbone.use_connect = True;
             
     bpy.ops.object.mode_set(mode='OBJECT');
@@ -2179,6 +2194,84 @@ def debug_ApplyDefaultPosRot_AsPose(nelSkeleton, bSkeletonObj):
     return;
 
 
+
+def helper_Nel_CBone_GetLocalRotationOnlyMatix(nelBone):
+    nelDefRotQuat = nelBone['DefaultRotQuat'];
+    x = nelDefRotQuat[0];
+    y = nelDefRotQuat[1];
+    z = nelDefRotQuat[2];
+    w = nelDefRotQuat[3];
+
+    _LocalRotMatrix =  mathutils.Quaternion((w, x, y, z)).to_matrix().to_4x4();
+
+    return _LocalRotMatrix;
+
+
+def getParentInvBindPos(nelBone, nelSkeleton):
+    if (nelBone['FatherId'] == -1):
+        return mathutils.Matrix.Identity(4);
+    else:
+        return nelSkeleton['_Bones'][nelBone['FatherId']]['InvBindPos']['M'];
+    
+
+def debug_CreateDefaultBoneTracks(nelSkeleton, bSkeletonObj):
+    
+    for nelBone in nelSkeleton['_Bones']:
+        if nelBone['Name'] not in bSkeletonObj.pose.bones:
+            print("'" + nelBone['Name'] + "' not found");
+            continue;
+            
+        bbone = bSkeletonObj.pose.bones[nelBone['Name']];
+
+        _LocalMatrix = helper_Nel_CBone_GetMatix(nelBone); # !!checked!!ok
+        _BoneBase_InvBindPos = nelBone['InvBindPos']['M']; # !!checked!!ok
+        _LocalSkeletonMatrix = helper_Nel_get_LocalSkeletonMatrix_Recursive(nelBone, nelSkeleton); # !!checked!!ok
+        _BoneSkinMatrix = _LocalSkeletonMatrix * _BoneBase_InvBindPos; # !!checked!!ok
+
+        print("===============================================");
+        print(bbone.name);
+
+        parentInvBP = getParentInvBindPos(nelBone, nelSkeleton);
+
+        localBP = _BoneBase_InvBindPos.inverted() * parentInvBP; # ????
+
+        #print(localBP.to_3x3());
+
+        #print(_LocalMatrix.to_3x3());
+
+        #if bbone.name == 'Bip01':
+        #print(localBP);
+        #bbone.matrix_basis = localBP.to_3x3().to_4x4();
+
+        print(_BoneBase_InvBindPos * bbone.matrix );
+        #print(_BoneBase_InvBindPos.inverted());
+
+        #bbone.matrix_basis = localBP.inverted().to_3x3().to_4x4();
+
+        #print(_BoneBase_InvBindPos.inverted().to_3x3());
+        #print(_LocalSkeletonMatrix);
+        #print(_LocalMatrix.to_3x3());
+        #print(_BoneBase_InvBindPos.to_3x3());
+        
+        #print(bbone.matrix);
+        #print(_BoneBase_InvBindPos.inverted().to_3x3().to_4x4());
+        #print(_BoneBase_InvBindPos);
+        #print(_BoneBase_InvBindPos.inverted().to_3x3());
+        #print(_LocalMatrix.to_3x3());
+        #_LocalSkeletonMatrix = helper_Nel_get_LocalSkeletonMatrix_Recursive(nelBone, nelSkeleton); # !!checked!!ok
+
+        
+        print("===============================================");
+
+        #bbone.matrix_basis = _LocalMatrix.to_3x3().inverted().to_4x4();
+
+        #bbone.matrix = _LocalSkeletonMatrix;
+
+
+    return;
+
+
+
 # !!TODO: a very very early test
 def convert_NelInstanceGroup_to_Blender(nelIG, rootPath):
     print("WARNING: convert_NelInstanceGroup_to_Blender is just an early test");
@@ -2262,7 +2355,26 @@ def unregister():
 
 
 # comment these two lines when using the script from the script editor
-if __name__ == "__main__":
-    register()
+#if __name__ == "__main__":
+#    register()
+
+
+
+print("uh");
+#===============================================================================
+
+#gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+#gSkeletonFileName = "tr_mo_clapclap.skel"
+#gShapeFileName = "FO_S2_big_tree.shape"
+
+#nelSkeleton = load_NEL_file(gFileRootPath+gSkeletonFileName);
+#bSkeletonObj = convert_NelSkeleton_to_BlenderArmature(nelSkeleton);
+#debug_CreateDefaultBoneTracks(nelSkeleton, bSkeletonObj);
+
+#nelMesh = load_NEL_file(gFileRootPath+gShapeFileName);
+#bMeshObj = convert_NelMesh_to_BlenderObject(nelMesh, gFileRootPath);
+
+
+
            
 
