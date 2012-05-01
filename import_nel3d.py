@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# NeL 3D Blender Importer - Version 0.3.3 -
+# NeL 3D Blender Importer - Version 0.3.4 -
 # Copyright (C) 2012 Holger Dammertz
 #
 #-------------------------------------------------------------------------------
@@ -41,7 +41,7 @@
 #     loading; it is reset for every load_NEL_file call
 #-------------------------------------------------------------------------------
 #  Changelog:
-#  
+#   0.3.4: changes to be compatible with blender 2.63
 #   0.3.3: creating vertex groups in MRM converted files
 #   0.3.2: reading of CMeshMRMSkinnedGeom (but no conversion yet)
 #   0.3.1: reading of .anim files (but no conversion yet)
@@ -53,8 +53,8 @@
 bl_info= {
     "name": "Import NeL 3D Objects",
     "author": "NeoSpark314",
-    "version": (0, 3),
-    "blender": (2, 6, 2),
+    "version": (0, 3, 4),
+    "blender": (2, 6, 3),
     "location": "File > Import > NeL 3D (.shape)",
     "description": "Import NeL 3D assets",
     "warning": "",
@@ -1557,9 +1557,9 @@ def convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom):
                 temp_AllFace_Idxs.append(faceIdxs);
                 temp_AllFace_MatIds.append(matId);
 
-    bmesh.faces.add(len(temp_AllFace_Idxs));
-    bmesh.faces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
-    bmesh.faces.foreach_set("material_index", temp_AllFace_MatIds);
+    bmesh.tessfaces.add(len(temp_AllFace_Idxs));
+    bmesh.tessfaces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
+    bmesh.tessfaces.foreach_set("material_index", temp_AllFace_MatIds);
 
     if (temp_Geom['_Skinned']):
         print("WARNING: !!TODO: add vertex groups in convert_CMeshGeom_to_BlenderMesh");
@@ -1568,7 +1568,7 @@ def convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom):
     for i in range (8):
         setKey = 'TexCoord'+str(i);
         if setKey in temp_VData:
-            bUVLayer = bmesh.uv_textures.new(setKey);
+            bUVLayer = bmesh.tessface_uv_textures.new(setKey);
             vertexUVs = temp_VData[setKey];
             for i, faceIdxs in enumerate(temp_AllFace_Idxs):
                 b_texFace = bUVLayer.data[i];
@@ -1694,11 +1694,11 @@ def convert_CMeshMRMSkinnedGeom_to_BlenderMesh(bobj, bmesh, mrmGeom):
     bmesh.vertices.foreach_set("co", unpack_list(temp_AllVertices));
     bmesh.vertices.foreach_set("normal", unpack_list(temp_AllNormals));
 
-    bmesh.faces.add(len(temp_AllFace_Idxs));
-    bmesh.faces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
-    bmesh.faces.foreach_set("material_index", temp_AllFace_MatIds);
+    bmesh.tessfaces.add(len(temp_AllFace_Idxs));
+    bmesh.tessfaces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
+    bmesh.tessfaces.foreach_set("material_index", temp_AllFace_MatIds);
 
-    bUVLayer = bmesh.uv_textures.new("uv0");
+    bUVLayer = bmesh.tessface_uv_textures.new("uv0");
     for i, faceIdxs in enumerate(temp_AllFace_Idxs):
         b_texFace = bUVLayer.data[i];
         b_texFace.uv1 = temp_AllUVs[faceIdxs[0]];
@@ -2361,12 +2361,13 @@ def unregister():
 
 
 # comment these two lines when using the script from the script editor
-#if __name__ == "__main__":
-#    register()
+if __name__ == "__main__":
+    register()
 
 #===============================================================================
 
 #gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+gFileRootPath = "e:/ryzom/data/flat/"
 #gSkeletonFileName = "tr_mo_clapclap.skel"
 #gShapeFileName = "FO_S2_big_tree.shape"
 #gShapeFileName = "ge_mission_capsule.shape"
