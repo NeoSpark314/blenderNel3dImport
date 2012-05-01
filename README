@@ -12,7 +12,7 @@ This is a very early version of an import script to import Nel 3d
 (dev.ryzom.com) data files into Blender (www.blender.org).  The goal
 is to be able to batch-import .shape, .skel, and .anim files.
 
-The script is developed/tested with Blender 2.62.
+The script is developed/tested with Blender 2.63.
 
 
 LICENSE: 
@@ -29,7 +29,7 @@ Note: this plug-in is in a very early stage of development.
 
 Blender Integration: to use it from the 'File->Import' menu copy the
 script file 'import_nel3d.py' into your blender script add-on
-directory (blender/2.62/scripts/addons) and activate it in the
+directory (blender/2.63/scripts/addons) and activate it in the
 user-preferences (Ctrl-Alt-u). In this mode it can currently only
 import .shape files.
 
@@ -39,5 +39,5 @@ of the file and comment/uncomment the desired functionality at the end
 of the file. To execute the script press (Alt-p). See the source files
 for further details.
 
-Error and warning messages are ouput to the Blender console window.
+Error and warning messages are output to the Blender console window.
 
