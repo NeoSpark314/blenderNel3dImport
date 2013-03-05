@@ -41,6 +41,7 @@
 #     loading; it is reset for every load_NEL_file call
 #-------------------------------------------------------------------------------
 #  Changelog:
+#   0.3.5: changes to be compatible with blender 2.66
 #   0.3.4: changes to be compatible with blender 2.63
 #   0.3.3: creating vertex groups in MRM converted files
 #   0.3.2: reading of CMeshMRMSkinnedGeom (but no conversion yet)
@@ -53,8 +54,8 @@
 bl_info= {
     "name": "Import NeL 3D Objects",
     "author": "NeoSpark314",
-    "version": (0, 3, 4),
-    "blender": (2, 6, 3),
+    "version": (0, 3, 5),
+    "blender": (2, 6, 6),
     "location": "File > Import > NeL 3D (.shape)",
     "description": "Import NeL 3D assets",
     "warning": "",
@@ -1469,7 +1470,9 @@ def findImage(filename, importRootPath):
             continue;
 
         img = load_image(path+fname);
-        if (img): return img;
+        if (img): 
+            print("Loaded texture: " + fname);
+            return img;
         else:
             print("ERROR loading image from " + path+fname);
             return None;
@@ -1484,9 +1487,9 @@ def helper_createAndAddTexture_returnImage(bmat, texFileName, suffixName, import
     btex = bpy.data.textures.new(texFileName+"_mat_"+suffixName, type='IMAGE')
     btex.image = img;
 
-    img.use_premultiply = True;
+    #img.use_premultiply = True;
 
-    print("Loaded texture: " + texFileName);
+    
 
     mtex = bmat.texture_slots.add();
     mtex.texture = btex;
@@ -1537,7 +1540,6 @@ def load_NEL_file(fullFilePath):
     return None;
 
 
-
 # this function expects an already generated bmesh and adds the geometry
 def convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom):
     temp_VData = temp_Geom['_VBuffer']['_VertexData'];
@@ -1557,9 +1559,14 @@ def convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom):
                 temp_AllFace_Idxs.append(faceIdxs);
                 temp_AllFace_MatIds.append(matId);
 
-    bmesh.tessfaces.add(len(temp_AllFace_Idxs));
-    bmesh.tessfaces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
-    bmesh.tessfaces.foreach_set("material_index", temp_AllFace_MatIds);
+
+
+    nbr_faces = len(temp_AllFace_Idxs)
+    bmesh.polygons.add(nbr_faces)
+    bmesh.loops.add(nbr_faces * 3)
+    bmesh.polygons.foreach_set("loop_start", range(0, nbr_faces * 3, 3))
+    bmesh.polygons.foreach_set("loop_total", (3,) * nbr_faces)
+    bmesh.loops.foreach_set("vertex_index", unpack_list(temp_AllFace_Idxs))
 
     if (temp_Geom['_Skinned']):
         print("WARNING: !!TODO: add vertex groups in convert_CMeshGeom_to_BlenderMesh");
@@ -1568,21 +1575,27 @@ def convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom):
     for i in range (8):
         setKey = 'TexCoord'+str(i);
         if setKey in temp_VData:
-            bUVLayer = bmesh.tessface_uv_textures.new(setKey);
+            bUVLayer = bmesh.uv_textures.new(setKey);
             vertexUVs = temp_VData[setKey];
-            for i, faceIdxs in enumerate(temp_AllFace_Idxs):
-                b_texFace = bUVLayer.data[i];
-                b_texFace.uv1 = vertexUVs[faceIdxs[0]];
-                b_texFace.uv2 = vertexUVs[faceIdxs[1]];
-                b_texFace.uv3 = vertexUVs[faceIdxs[2]];
 
-                b_texFace.uv1[1] = 1.0 - b_texFace.uv1[1]
-                b_texFace.uv2[1] = 1.0 - b_texFace.uv2[1]
-                b_texFace.uv3[1] = 1.0 - b_texFace.uv3[1]
+            uvl = bmesh.uv_layers.active.data[:]
+            for fidx, pl in enumerate(bmesh.polygons):
+                uvl[pl.loop_start + 0].uv = vertexUVs[temp_AllFace_Idxs[fidx][0]];
+                uvl[pl.loop_start + 1].uv = vertexUVs[temp_AllFace_Idxs[fidx][1]];
+                uvl[pl.loop_start + 2].uv = vertexUVs[temp_AllFace_Idxs[fidx][2]];
+                uvl[pl.loop_start + 0].uv[1] = 1.0 - uvl[pl.loop_start + 0].uv[1]
+                uvl[pl.loop_start + 1].uv[1] = 1.0 - uvl[pl.loop_start + 1].uv[1]
+                uvl[pl.loop_start + 2].uv[1] = 1.0 - uvl[pl.loop_start + 2].uv[1]
 
-                if (len(bmesh.materials[temp_AllFace_MatIds[i]].texture_slots) > 0):
-                    if (bmesh.materials[temp_AllFace_MatIds[i]].texture_slots[0] != None):
-                        b_texFace.image = bmesh.materials[temp_AllFace_MatIds[i]].texture_slots[0].texture.image;
+            uvFaces = bmesh.uv_textures.active.data[:]
+            for fidx, pl in enumerate(bmesh.polygons):
+                pl.material_index = temp_AllFace_MatIds[fidx]
+                if (len(bmesh.materials[temp_AllFace_MatIds[fidx]].texture_slots) > 0):
+                    if (bmesh.materials[temp_AllFace_MatIds[fidx]].texture_slots[0] != None):
+                        uvFaces[fidx].image = bmesh.materials[temp_AllFace_MatIds[i]].texture_slots[0].texture.image;
+
+    bmesh.validate()
+    bmesh.update()
 
     # enddef --convert_CMeshGeom_to_BlenderMesh(bmesh, temp_Geom)--
 
@@ -1694,27 +1707,35 @@ def convert_CMeshMRMSkinnedGeom_to_BlenderMesh(bobj, bmesh, mrmGeom):
     bmesh.vertices.foreach_set("co", unpack_list(temp_AllVertices));
     bmesh.vertices.foreach_set("normal", unpack_list(temp_AllNormals));
 
-    bmesh.tessfaces.add(len(temp_AllFace_Idxs));
-    bmesh.tessfaces.foreach_set("vertices_raw", unpack_face_list(temp_AllFace_Idxs));
-    bmesh.tessfaces.foreach_set("material_index", temp_AllFace_MatIds);
+    nbr_faces = len(temp_AllFace_Idxs)
+    bmesh.polygons.add(nbr_faces)
+    bmesh.loops.add(nbr_faces * 3)
+    bmesh.polygons.foreach_set("loop_start", range(0, nbr_faces * 3, 3))
+    bmesh.polygons.foreach_set("loop_total", (3,) * nbr_faces)
+    bmesh.loops.foreach_set("vertex_index", unpack_list(temp_AllFace_Idxs))
 
-    bUVLayer = bmesh.tessface_uv_textures.new("uv0");
-    for i, faceIdxs in enumerate(temp_AllFace_Idxs):
-        b_texFace = bUVLayer.data[i];
-        b_texFace.uv1 = temp_AllUVs[faceIdxs[0]];
-        b_texFace.uv2 = temp_AllUVs[faceIdxs[1]];
-        b_texFace.uv3 = temp_AllUVs[faceIdxs[2]];
 
-        b_texFace.uv1[1] = 1.0 - b_texFace.uv1[1]
-        b_texFace.uv2[1] = 1.0 - b_texFace.uv2[1]
-        b_texFace.uv3[1] = 1.0 - b_texFace.uv3[1]
+    bUVLayer = bmesh.uv_textures.new("uv0");
+    uvl = bmesh.uv_layers.active.data[:]
+    for fidx, pl in enumerate(bmesh.polygons):
+        uvl[pl.loop_start + 0].uv = temp_AllUVs[temp_AllFace_Idxs[fidx][0]];
+        uvl[pl.loop_start + 1].uv = temp_AllUVs[temp_AllFace_Idxs[fidx][1]];
+        uvl[pl.loop_start + 2].uv = temp_AllUVs[temp_AllFace_Idxs[fidx][2]];
+        uvl[pl.loop_start + 0].uv[1] = 1.0 - uvl[pl.loop_start + 0].uv[1]
+        uvl[pl.loop_start + 1].uv[1] = 1.0 - uvl[pl.loop_start + 1].uv[1]
+        uvl[pl.loop_start + 2].uv[1] = 1.0 - uvl[pl.loop_start + 2].uv[1]
 
+    uvFaces = bmesh.uv_textures.active.data[:]
+    for fidx, pl in enumerate(bmesh.polygons):
+        pl.material_index = temp_AllFace_MatIds[fidx]
         # This is more or less a hack to assign the first loaded image in a material to each face
         # so it is visible in blender
-        if (len(bmesh.materials[temp_AllFace_MatIds[i]].texture_slots) > 0):
-            b_texFace.image = bmesh.materials[temp_AllFace_MatIds[i]].texture_slots[0].texture.image;
+        if (len(bmesh.materials[temp_AllFace_MatIds[fidx]].texture_slots) > 0):
+            if (bmesh.materials[temp_AllFace_MatIds[fidx]].texture_slots[0] != None):
+                uvFaces[fidx].image = bmesh.materials[temp_AllFace_MatIds[i]].texture_slots[0].texture.image;
 
-
+    bmesh.validate()
+    bmesh.update()
 
     vgroups = [];
     # now we create the vertex groups named with the '_BonesName' array from the nel mrmGeom:
@@ -2367,8 +2388,10 @@ if __name__ == "__main__":
 #===============================================================================
 
 #gFileRootPath = "d:/programming/data/ryzom/flat_unpacked_data/"
+#gFileRootPath = "E:/ryzom/data/characters_unpacked_data/characters_shapes/"
 gFileRootPath = "e:/ryzom/data/flat/"
 #gSkeletonFileName = "tr_mo_clapclap.skel"
+gShapeFileName = "ca_ship.shape"
 #gShapeFileName = "FO_S2_big_tree.shape"
 #gShapeFileName = "ge_mission_capsule.shape"
 #gShapeFileName = "GE_Mission_oeuf_kitin.shape";
